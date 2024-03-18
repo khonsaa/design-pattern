@@ -4,6 +4,12 @@
 #include <cstdlib>
 #include <ctime>
 
+// Define a struct to represent a player
+struct Player {
+    std::string name;
+    char symbol; // You can use symbols like 'X' and 'O' for players
+};
+
 class Cell {
 private:
     int value;
@@ -30,7 +36,7 @@ private:
 
 public:
     Board() {
-        // Inisialisasi papan dengan sel kosong
+        // Initialize the board with empty cells
         cells = std::vector<std::vector<Cell>>(9, std::vector<Cell>(9));
     }
 
@@ -53,7 +59,7 @@ public:
     }
 
     bool isMoveValid(int row, int col, int num) const {
-        // Periksa apakah angka yang dimasukkan bertabrakan dengan angka yang sudah ada dalam baris, kolom, atau kotak 3x3 yang sama
+        // Check if the number conflicts with numbers in the same row, column, or 3x3 box
         for (int i = 0; i < 9; ++i) {
             if (cells[row][i].getValue() == num || cells[i][col].getValue() == num || cells[3 * (row / 3) + i / 3][3 * (col / 3) + i % 3].getValue() == num) {
                 return false;
@@ -63,7 +69,7 @@ public:
     }
 
     bool isBoardFull() const {
-        // Periksa apakah papan sudah penuh (tidak ada lagi kotak kosong)
+        // Check if the board is full (no more empty cells)
         for (int i = 0; i < 9; ++i) {
             for (int j = 0; j < 9; ++j) {
                 if (cells[i][j].isEmpty()) {
@@ -75,7 +81,7 @@ public:
     }
 
     bool solveSudoku() {
-        // Cari kotak kosong dan coba isi dengan angka yang valid
+        // Find an empty cell and try to fill it with a valid number
         for (int row = 0; row < 9; ++row) {
             for (int col = 0; col < 9; ++col) {
                 if (cells[row][col].isEmpty()) {
@@ -85,14 +91,14 @@ public:
                             if (solveSudoku()) {
                                 return true;
                             }
-                            cells[row][col].setValue(0); // Backtrack jika tidak berhasil menemukan solusi
+                            cells[row][col].setValue(0); // Backtrack if unable to find a solution
                         }
                     }
-                    return false; // Tidak ada angka yang cocok, tidak mungkin menemukan solusi
+                    return false; // No suitable number found, no solution possible
                 }
             }
         }
-        return true; // Semua sel telah diisi dengan angka yang valid
+        return true; // All cells filled with valid numbers
     }
 
     void setNumber(int row, int col, int num) {
@@ -100,14 +106,14 @@ public:
     }
 
     void generatePuzzle() {
-        // Seed generator angka acak
+        // Seed the random number generator
         std::srand(std::time(nullptr));
         
-        // Generate angka acak pada beberapa kotak di papan
-        for (int i = 0; i < 20; ++i) { // Mengisi 20 kotak dengan angka acak
+        // Generate random numbers in some cells on the board
+        for (int i = 0; i < 20; ++i) { // Fill 20 cells with random numbers
             int row = std::rand() % 9;
             int col = std::rand() % 9;
-            int num = std::rand() % 9 + 1; // Generate angka acak antara 1 dan 9
+            int num = std::rand() % 9 + 1; // Generate a random number between 1 and 9
             if (isMoveValid(row, col, num)) {
                 cells[row][col].setValue(num);
             }
@@ -118,53 +124,71 @@ public:
 class SudokuGame {
 private:
     Board board;
+    std::vector<Player> players; // Vector to store players
+    int currentPlayerIndex; // Index of the current player
 
 public:
-    SudokuGame() {}
+    SudokuGame(const std::vector<Player>& players) : players(players), currentPlayerIndex(0) {}
 
     void printCurrentBoard() {
         board.printBoard();
     }
 
     bool play() {
-        int row, col, num;
-
-        std::cout << "Selamat datang di permainan Sudoku!" << std::endl;
-        std::cout << "Masukkan angka pada kotak kosong (baris kolom angka)" << std::endl;
+        std::cout << "Welcome to the Sudoku game!" << std::endl;
+        std::cout << "Enter numbers into the empty cells (row column number)" << std::endl;
 
         board.generatePuzzle();
 
         board.printBoard();
 
         while (!board.isBoardFull()) {
-            std::cout << "Masukkan baris, kolom, dan angka (pisahkan dengan spasi): ";
+            Player& currentPlayer = players[currentPlayerIndex];
+            std::cout << currentPlayer.name << "'s turn:" << std::endl;
+            int row, col, num;
+            std::cout << "Enter row, column, and number (separated by space): ";
             std::cin >> row >> col >> num;
 
             if (row < 1 || row > 9 || col < 1 || col > 9 || num < 1 || num > 9) {
-                std::cout << "Input tidak valid! Harap masukkan angka antara 1 hingga 9 untuk baris, kolom, dan angka." << std::endl;
+                std::cout << "Invalid input! Please enter numbers between 1 and 9 for row, column, and number." << std::endl;
                 continue;
             }
 
             if (board.isMoveValid(row - 1, col - 1, num)) {
                 board.setNumber(row - 1, col - 1, num);
                 printCurrentBoard();
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.size(); // Move to the next player
             } else {
-                std::cout << "Langkah tidak valid! Coba lagi." << std::endl;
+                std::cout << "Invalid move! Try again." << std::endl;
             }
         }
 
         if (board.solveSudoku()) {
-            std::cout << "Selamat! Anda berhasil menyelesaikan Sudoku!" << std::endl;
+            std::cout << "Congratulations! You have solved the Sudoku puzzle!" << std::endl;
             return true;
         } else {
-            std::cout << "Tidak ada solusi untuk Sudoku yang dimasukkan. Silakan coba lagi!" << std::endl;
+            std::cout << "No solution found for the entered Sudoku. Please try again!" << std::endl;
             return false;
         }
     }
 };
 
 int main() {
-    SudokuGame game;
+    // Get player names or symbols
+    std::string player1Name, player2Name;
+    std::cout << "Enter Player 1's name: ";
+    std::cin >> player1Name;
+    std::cout << "Enter Player 2's name: ";
+    std::cin >> player2Name;
+
+    // Create player instances
+    Player player1 = {player1Name, 'X'};
+    Player player2 = {player2Name, 'O'};
+    std::vector<Player> players = {player1, player2};
+
+    // Start the game with the players
+    SudokuGame game(players);
     game.play();
+
     return 0;
 }
