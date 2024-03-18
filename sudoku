@@ -1,0 +1,170 @@
+#include <iostream>
+#include <vector>
+#include <iomanip>
+#include <cstdlib>
+#include <ctime>
+
+class Cell {
+private:
+    int value;
+
+public:
+    Cell() : value(0) {}
+
+    void setValue(int num) {
+        value = num;
+    }
+
+    int getValue() const {
+        return value;
+    }
+
+    bool isEmpty() const {
+        return value == 0;
+    }
+};
+
+class Board {
+private:
+    std::vector<std::vector<Cell>> cells;
+
+public:
+    Board() {
+        // Inisialisasi papan dengan sel kosong
+        cells = std::vector<std::vector<Cell>>(9, std::vector<Cell>(9));
+    }
+
+    void printBoard() {
+        std::cout << "-------------------------" << std::endl;
+        for (int i = 0; i < 9; ++i) {
+            if (i % 3 == 0 && i != 0)
+                std::cout << "|-----------------------|" << std::endl;
+            for (int j = 0; j < 9; ++j) {
+                if (j % 3 == 0 && j != 0)
+                    std::cout << "| ";
+                if (cells[i][j].isEmpty())
+                    std::cout << ". ";
+                else
+                    std::cout << cells[i][j].getValue() << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "-------------------------" << std::endl;
+    }
+
+    bool isMoveValid(int row, int col, int num) const {
+        // Periksa apakah angka yang dimasukkan bertabrakan dengan angka yang sudah ada dalam baris, kolom, atau kotak 3x3 yang sama
+        for (int i = 0; i < 9; ++i) {
+            if (cells[row][i].getValue() == num || cells[i][col].getValue() == num || cells[3 * (row / 3) + i / 3][3 * (col / 3) + i % 3].getValue() == num) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool isBoardFull() const {
+        // Periksa apakah papan sudah penuh (tidak ada lagi kotak kosong)
+        for (int i = 0; i < 9; ++i) {
+            for (int j = 0; j < 9; ++j) {
+                if (cells[i][j].isEmpty()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    bool solveSudoku() {
+        // Cari kotak kosong dan coba isi dengan angka yang valid
+        for (int row = 0; row < 9; ++row) {
+            for (int col = 0; col < 9; ++col) {
+                if (cells[row][col].isEmpty()) {
+                    for (int num = 1; num <= 9; ++num) {
+                        if (isMoveValid(row, col, num)) {
+                            cells[row][col].setValue(num);
+                            if (solveSudoku()) {
+                                return true;
+                            }
+                            cells[row][col].setValue(0); // Backtrack jika tidak berhasil menemukan solusi
+                        }
+                    }
+                    return false; // Tidak ada angka yang cocok, tidak mungkin menemukan solusi
+                }
+            }
+        }
+        return true; // Semua sel telah diisi dengan angka yang valid
+    }
+
+    void setNumber(int row, int col, int num) {
+        cells[row][col].setValue(num);
+    }
+
+    void generatePuzzle() {
+        // Seed generator angka acak
+        std::srand(std::time(nullptr));
+        
+        // Generate angka acak pada beberapa kotak di papan
+        for (int i = 0; i < 20; ++i) { // Mengisi 20 kotak dengan angka acak
+            int row = std::rand() % 9;
+            int col = std::rand() % 9;
+            int num = std::rand() % 9 + 1; // Generate angka acak antara 1 dan 9
+            if (isMoveValid(row, col, num)) {
+                cells[row][col].setValue(num);
+            }
+        }
+    }
+};
+
+class SudokuGame {
+private:
+    Board board;
+
+public:
+    SudokuGame() {}
+
+    void printCurrentBoard() {
+        board.printBoard();
+    }
+
+    bool play() {
+        int row, col, num;
+
+        std::cout << "Selamat datang di permainan Sudoku!" << std::endl;
+        std::cout << "Masukkan angka pada kotak kosong (baris kolom angka)" << std::endl;
+
+        board.generatePuzzle();
+
+        board.printBoard();
+
+        while (!board.isBoardFull()) {
+            std::cout << "Masukkan baris, kolom, dan angka (pisahkan dengan spasi): ";
+            std::cin >> row >> col >> num;
+
+            if (row < 1 || row > 9 || col < 1 || col > 9 || num < 1 || num > 9) {
+                std::cout << "Input tidak valid! Harap masukkan angka antara 1 hingga 9 untuk baris, kolom, dan angka." << std::endl;
+                continue;
+            }
+
+            if (board.isMoveValid(row - 1, col - 1, num)) {
+                board.setNumber(row - 1, col - 1, num);
+                printCurrentBoard();
+            } else {
+                std::cout << "Langkah tidak valid! Coba lagi." << std::endl;
+            }
+        }
+
+        if (board.solveSudoku()) {
+            std::cout << "Selamat! Anda berhasil menyelesaikan Sudoku!" << std::endl;
+            return true;
+        } else {
+            std::cout << "Tidak ada solusi untuk Sudoku yang dimasukkan. Silakan coba lagi!" << std::endl;
+            return false;
+        }
+    }
+};
+
+int main() {
+    SudokuGame game;
+    game.play();
+    return 0;
+}
